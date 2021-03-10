@@ -1,5 +1,6 @@
 mod types;
 mod generator;
+mod trie;
 
 fn main() {
     // let generated_queries = vec![
