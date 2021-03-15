@@ -1,5 +1,7 @@
 use std::fmt;
+use std::default;
 
+#[derive(Debug)]
 pub enum Query {
     Add(Vec<String>, Vec<String>),
     Done(u64),
@@ -39,6 +41,13 @@ impl fmt::Display for Query {
     }
 }
 
+impl default::Default for Query {
+    fn default() -> Self {
+        Self::Done(0)
+    }
+}
+
+#[derive(Debug)]
 pub enum WordOrTag {
     Word (String),
     Tag (String),
@@ -54,5 +63,39 @@ impl fmt::Display for WordOrTag {
                 write!(f, "#{}", tag)
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_query() {
+        let add_query = Query::Add(
+            vec![
+                "hello".to_string(),
+                "world".to_string(),
+            ], 
+            vec![
+                "these".to_string(),
+                "are".to_string(),
+                "the".to_string(),
+                "tags".to_string(),
+            ]
+        );
+
+        let done_query = Query::Done(4);
+
+        let search_query = Query::Search(vec![
+            WordOrTag::Word("hello".to_string()), 
+            WordOrTag::Tag("world".to_string()),
+            WordOrTag::Word("bello".to_string()),
+            WordOrTag::Tag("burld".to_string())
+        ]);
+
+        assert_eq!(add_query.to_string(), "add \"hello world\" #these #are #the #tags".to_owned());
+        assert_eq!(done_query.to_string(), "done 4".to_owned());
+        assert_eq!(search_query.to_string(), "search hello #world bello #burld".to_owned());
     }
 }
