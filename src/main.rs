@@ -3,16 +3,52 @@ mod generator;
 mod constants;
 
 use rand::prelude::*;
+use std::env;
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::LineWriter;
 
-fn main() {
+//example usage: query-generator.exe foo.txt 100 50 10 30
+
+fn main() -> std::io::Result<()> {
+    //read args
+    let mut args = env::args();
+    args.next();
+    let file_path = args.next()
+    .expect("Error: expected \"file_path\" argument");
+    let query_num: usize = args.next()
+    .expect("Error: expected \"query_num\" argument").parse()
+    .expect("Error: failed to parse \"query_num\" argument");
+    let word_num = args.next()
+    .expect("Error: expected \"word_num\" argument").parse()
+    .expect("Error: failed to parse \"word_num\" argument");
+    let tag_num = args.next()
+    .expect("Error: expected \"tag_num\" argument").parse()
+    .expect("Error: failed to parse \"tag_num\" argument");
+    let add_query_history_num = args.next()
+    .expect("Error: expected \"add_query_history_num\" argument").parse()
+    .expect("Error: failed to parse \"add_query_history_num\" argument");
+    
+    //create generator
     let mut rng = thread_rng();
     let rng = &mut rng;
+    let mut generator = generator::Generator::new(rng, word_num, tag_num, add_query_history_num);
 
-    //read terminal args to initialize generator
-    let mut generator = generator::Generator::new(rng, 20, 5, 30);
+    //open file and output buffer
+    let file = File::create(file_path)?;
+    let mut writer = LineWriter::new(file);
 
-    for _ in 0..99 { //loop 0..number_of_queries
+    //write number of queries as first line
+    writer.write(query_num.to_string().as_bytes())?;
+    writer.write(&[0x0a])?;
+
+    //write queries out to specified file
+    for _ in 0..query_num {
         let query = generator.get_query(rng); //only thing which will grow is array of "active" indices
-        println!("{}", query); //write to (buffered) file
+        writer.write(&query.to_string().as_bytes())?;
+        writer.write(&[0x0a])?;
     }
+    writer.flush()?;
+
+    Ok(())
 }

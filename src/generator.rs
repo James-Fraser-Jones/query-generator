@@ -8,19 +8,19 @@ use rand::prelude::*;
 
 pub struct Generator {
     next_id: u64,
-    active: Vec<u64>,
+    active_ids: Vec<u64>,
     pool: Pool,
-    queries_size: usize,
-    queries: VecDeque<Query>,
+    add_query_history_num: usize,
+    add_query_history: VecDeque<Query>,
 }
 impl Generator {
-    pub fn new(rng: &mut ThreadRng, word_num: usize, tag_num: usize, queries_size: usize) -> Self {
+    pub fn new(rng: &mut ThreadRng, word_num: usize, tag_num: usize, add_query_history_num: usize) -> Self {
         Generator {
             next_id: 0,
-            active: vec![],
+            active_ids: vec![],
             pool: Pool::new(rng, word_num, tag_num),
-            queries_size,
-            queries: VecDeque::with_capacity(queries_size),
+            add_query_history_num,
+            add_query_history: VecDeque::with_capacity(add_query_history_num),
         }
     }
 
@@ -29,25 +29,25 @@ impl Generator {
             match rng.gen_range::<u8, _>(1..=4) {
                 1..=2 => {                          //50%
                     let query = generate_add(rng, &self.pool);
-                    self.active.push(self.next_id);
+                    self.active_ids.push(self.next_id);
                     self.next_id = self.next_id + 1;
-                    if self.queries.len() == self.queries_size { //maintain maximum size of queries by removing oldest element
-                        self.queries.pop_front();
+                    if self.add_query_history.len() == self.add_query_history_num { //maintain maximum size of queries by removing oldest element
+                        self.add_query_history.pop_front();
                     }
-                    self.queries.push_back(query.clone());
+                    self.add_query_history.push_back(query.clone());
                     return query;
                 },
                 3 => {                              //25%
-                    if self.active.len() > 0 { //cannot done if there are no active tasks
-                        let index = rng.gen_range(0..self.active.len());
-                        let query = generate_done(self.active[index]);
-                        self.active.remove(index);
+                    if self.active_ids.len() > 0 { //cannot done if there are no active tasks
+                        let index = rng.gen_range(0..self.active_ids.len());
+                        let query = generate_done(self.active_ids[index]);
+                        self.active_ids.remove(index);
                         return query;
                     }
                 },
                 4 => {                              //25%
-                    if self.queries.len() > 0 {
-                        let add_query = self.queries.get(rng.gen_range(0..self.queries.len())).unwrap();
+                    if self.add_query_history.len() > 0 {
+                        let add_query = self.add_query_history.get(rng.gen_range(0..self.add_query_history.len())).unwrap();
                         let query = generate_search(rng, add_query);
                         return query;
                     }
