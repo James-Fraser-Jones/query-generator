@@ -1,4 +1,4 @@
-pub const LETTERS: [char; 26] = [
+pub const CHARS: [char; 27] = [
     'a',
     'b',
     'c',
@@ -25,6 +25,7 @@ pub const LETTERS: [char; 26] = [
     'x',
     'y',
     'z',
+    '-',
 ];
 
 pub const SEGMENTS: [&str; 1000] = [

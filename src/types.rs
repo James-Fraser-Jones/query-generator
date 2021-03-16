@@ -1,7 +1,7 @@
 use std::fmt;
 use std::default;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Query {
     Add(Vec<String>, Vec<String>),
     Done(u64),
@@ -47,7 +47,7 @@ impl default::Default for Query {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum WordOrTag {
     Word (String),
     Tag (String),
@@ -71,7 +71,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn display_query() {
+    fn query_display_test() {
         let add_query = Query::Add(
             vec![
                 "hello".to_string(),
