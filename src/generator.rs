@@ -58,69 +58,6 @@ impl Generator {
     }
 }
 
-mod pool {
-    use super::*;
-
-    pub struct Pool {
-        word_num: usize,
-        tag_num: usize,
-        word_pool: Vec<String>,
-        tag_pool: Vec<String>,
-    }
-
-    impl Pool {
-        pub fn new(rng: &mut ThreadRng, word_num: usize, tag_num: usize) -> Pool {
-            Pool {
-                word_num,
-                tag_num,
-                word_pool: generate_pool(rng, word_num),
-                tag_pool: generate_pool(rng, tag_num),
-            }
-        }
-
-        pub fn get_word(&self, rng: &mut ThreadRng) -> &str {
-            &self.word_pool[rng.gen_range(0..self.word_num)]
-        }
-
-        pub fn get_tag(&self, rng: &mut ThreadRng) -> &str {
-            &self.tag_pool[rng.gen_range(0..self.tag_num)]
-        }
-    }
-
-    fn generate_pool(rng: &mut ThreadRng, num: usize) -> Vec<String> {
-        let mut pool = vec![];
-        for _ in 0..num {
-            pool.push(generate_drop(rng))
-        }
-        pool
-    }
-    
-    fn generate_drop(rng: &mut ThreadRng) -> String {
-        let mut drop = SEGMENTS[rng.gen_range(0..=999)].to_owned();
-        let extra_segments = match rng.gen_range::<u8, _>(1..=8) {
-            1..=4 => 0,                 //50%
-            5..=6 => 1,                 //25%
-            7 => 2,                     //12.5%
-            8 => 3,                     //12.5%
-            _ => Default::default(),    //0%
-        };
-        for _ in 0..extra_segments {
-            drop.push('-');
-            let extra_hyphens = match rng.gen_range::<u8, _>(1..=20) {
-                1..=18 => 0,                //90%
-                19 => 1,                    //5%
-                20 => 2,                    //5%
-                _ => Default::default(),    //0%
-            };
-            for _ in 0..extra_hyphens {
-                drop.push('-');
-            }
-            drop.push_str(SEGMENTS[rng.gen_range(0..=999)]);
-        }
-        drop
-    }
-}
-
 fn generate_add(rng: &mut ThreadRng, pool: &Pool) -> Query {
     let mut words = vec![pool.get_word(rng).to_owned()];
     let mut tags = vec![];
@@ -245,77 +182,65 @@ fn random_word(rng: &mut ThreadRng) -> String {
     stri
 }
 
-// pub fn generate(query_num: usize, word_num: usize, tag_num: usize) -> Vec<Query> {
-//     let mut rng = thread_rng();
-//     let pool = Pool::new(&mut rng, word_num, tag_num);
-//     let mut queries = vec![];
+mod pool {
+    use super::*;
 
-//     let mut next_id = 0; //done index tracking
-//     let mut active = vec![];
+    pub struct Pool {
+        word_num: usize,
+        tag_num: usize,
+        word_pool: Vec<String>,
+        tag_pool: Vec<String>,
+    }
 
-//     while queries.len() < query_num {
-//         match rng.gen_range::<u8, _>(1..=4) {
-//             1..=2 => {                          //50%
-//                 let query = generate_add(&mut rng, &pool);
-//                 queries.push(query);
-//                 active.push(next_id);
-//                 next_id = next_id + 1;
-//             },
-//             3 => {                              //25%
-//                 if active.len() > 0 { //cannot done if there are no active tasks
-//                     let index = rng.gen_range(0..active.len());
-//                     let query = generate_done(active[index]);
-//                     queries.push(query);
-//                     active.remove(index);
-//                 }
-//             },
-//             4 => {                              //25%
-//                 match get_add_query(&mut rng, &queries) {
-//                     None => Default::default(), //cannot search if there are 0 added queries
-//                     Some(add_query) => {
-//                         let query = generate_search(&mut rng, add_query);
-//                         queries.push(query);
-//                     }
-//                 }
-//             },
-//             _ => Default::default(),            //0%
-//         };
-//     }
+    impl Pool {
+        pub fn new(rng: &mut ThreadRng, word_num: usize, tag_num: usize) -> Pool {
+            Pool {
+                word_num,
+                tag_num,
+                word_pool: generate_pool(rng, word_num),
+                tag_pool: generate_pool(rng, tag_num),
+            }
+        }
 
-//     queries
-// }
+        pub fn get_word(&self, rng: &mut ThreadRng) -> &str {
+            &self.word_pool[rng.gen_range(0..self.word_num)]
+        }
 
-// fn get_add_query<'a>(rng: &mut ThreadRng, queries: &'a Vec<Query>) -> Option<&'a Query> {
-//     if queries.len() == 0 { //No need to search an empty vector
-//         return None
-//     }
-//     let start = rng.gen_range(0..queries.len()); //choose random starting index
-//     if let Query::Add(_, _) = queries[start] { //check first element
-//         return Some(&queries[start])
-//     }
-//     for i in (1..queries.len()).map(|index| (index + start) % queries.len()) { //loop through remaining elements
-//         if i == start { //we did a whole loop and didn't find an add_query
-//             return None
-//         }
-//         else if let Query::Add(_, _) = queries[i] { //check element
-//             return Some(&queries[i])
-//         }
-//     }
-//     Default::default() //unreachable
-// }
+        pub fn get_tag(&self, rng: &mut ThreadRng) -> &str {
+            &self.tag_pool[rng.gen_range(0..self.tag_num)]
+        }
+    }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-//     #[test]
-//     fn get_add_query_test() {
-//         let mut rng = thread_rng();
-//         let mut queries = vec![];
-//         assert_eq!(get_add_query(&mut rng, &queries), None);
-//         queries.push(Query::Search(vec![]));
-//         assert_eq!(get_add_query(&mut rng, &queries), None);
-//         queries.push(Query::Add(vec!["Hello".to_owned()], vec!["World!".to_owned()]));
-//         assert_eq!(get_add_query(&mut rng, &queries), Some(&Query::Add(vec!["Hello".to_owned()], vec!["World!".to_owned()])));
-//     }
-// }
+    fn generate_pool(rng: &mut ThreadRng, num: usize) -> Vec<String> {
+        let mut pool = vec![];
+        for _ in 0..num {
+            pool.push(generate_drop(rng))
+        }
+        pool
+    }
+    
+    fn generate_drop(rng: &mut ThreadRng) -> String {
+        let mut drop = SEGMENTS[rng.gen_range(0..=999)].to_owned();
+        let extra_segments = match rng.gen_range::<u8, _>(1..=8) {
+            1..=4 => 0,                 //50%
+            5..=6 => 1,                 //25%
+            7 => 2,                     //12.5%
+            8 => 3,                     //12.5%
+            _ => Default::default(),    //0%
+        };
+        for _ in 0..extra_segments {
+            drop.push('-');
+            let extra_hyphens = match rng.gen_range::<u8, _>(1..=20) {
+                1..=18 => 0,                //90%
+                19 => 1,                    //5%
+                20 => 2,                    //5%
+                _ => Default::default(),    //0%
+            };
+            for _ in 0..extra_hyphens {
+                drop.push('-');
+            }
+            drop.push_str(SEGMENTS[rng.gen_range(0..=999)]);
+        }
+        drop
+    }
+}

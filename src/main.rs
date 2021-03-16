@@ -8,7 +8,10 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::LineWriter;
 
-//example usage: query-generator.exe foo.txt 100 50 10 30
+/* examples (don't forget to use release build)
+benchmark_5m.txt 5000000 1000 100 1000
+benchmark_5k.txt 5000 100 50 100
+*/
 
 fn main() -> std::io::Result<()> {
     //read args
@@ -40,13 +43,13 @@ fn main() -> std::io::Result<()> {
 
     //write number of queries as first line
     writer.write(query_num.to_string().as_bytes())?;
-    writer.write(&[0x0a])?;
+    writer.write(&[b'\n'])?;
 
     //write queries out to specified file
     for _ in 0..query_num {
         let query = generator.get_query(rng); //only thing which will grow is array of "active" indices
         writer.write(&query.to_string().as_bytes())?;
-        writer.write(&[0x0a])?;
+        writer.write(&[b'\n'])?;
     }
     writer.flush()?;
 
