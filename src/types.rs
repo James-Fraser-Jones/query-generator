@@ -20,11 +20,11 @@ impl fmt::Display for Query {
                 description.pop();
                 let mut tag_string = String::new();
                 for tag in tags {
+                    tag_string.push(' ');
                     tag_string.push('#');
                     tag_string.push_str(tag);
-                    tag_string.push(' ');
                 }
-                write!(f, "add \"{}\" {}", description, tag_string)
+                write!(f, "add \"{}\"{}", description, tag_string)
             },
             Query::Done(index) => {
                 write!(f, "done {}", index)
@@ -32,10 +32,10 @@ impl fmt::Display for Query {
             Query::Search(params) => {
                 let mut search_string = String::new();
                 for param in params {
-                    search_string.push_str(&param.to_string());
                     search_string.push(' ');
+                    search_string.push_str(&param.to_string());
                 }
-                write!(f, "search {}", search_string)
+                write!(f, "search{}", search_string)
             },
         }
     }
